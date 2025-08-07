@@ -3,7 +3,7 @@ const express = require("express");
 
 const dotenv = require("dotenv");
 const { MongoClient } = require("mongodb");
-const bodyparser = require("body-parser");
+
 const bodyParser = require("body-parser");
 const cors = require("cors");
 
@@ -28,7 +28,7 @@ client.connect()
   .then(() => {
     console.log("✅ MongoDB connected");
     app.listen(port, () => {
-      console.log(`✅ Server is running on port ${port}`);
+      console.log(`✅ Server is running on port  http://localhost:${port}`);
     });
   })
   .catch((err) => {
@@ -54,38 +54,46 @@ app.post("/", async (req, res) => {
   });
 });
 //delete a password
+const { ObjectId } = require("mongodb");
+
 app.delete("/", async (req, res) => {
-  const password = req.body;
-  const db = client.db(dbName);
-  const collection = db.collection("passwords");
-  const findResult = await collection.deleteOne(password);
-  res.send({
-    success: true,
-    result: findResult,
-    message: "password deleted successfully",
-  });
+  try {
+    const { _id } = req.body;
+    if (!_id) {
+      return res.status(400).json({ success: false, message: "_id is required for deletion" });
+    }
+    const db = client.db(dbName);
+    const collection = db.collection("passwords");
+    const result = await collection.deleteOne({ _id: new ObjectId(_id) });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ success: false, message: "Password not found" });
+    }
+    res.send({
+      success: true,
+      result,
+      message: "Password deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 });
 // update a password
 app.put("/", async (req, res) => {
   try {
-    const { id, site, username, password } = req.body;
-
-    if (!id || !site || !username || !password) {
+    const { _id, site, username, password } = req.body;
+    if (!_id || !site || !username || !password) {
       return res.status(400).json({ success: false, message: "Invalid data" });
     }
-
     const db = client.db(dbName);
     const collection = db.collection("passwords");
-
     const result = await collection.updateOne(
-      { id }, // match by custom UUID
-      { $set: { site, username, password } } // update fields
+      { _id: new ObjectId(_id) },
+      { $set: { site, username, password } }
     );
-
     if (result.matchedCount === 0) {
       return res.status(404).json({ success: false, message: "Not found" });
     }
-
     res.json({
       success: true,
       result,
@@ -98,4 +106,10 @@ app.put("/", async (req, res) => {
 });
 
 
-module.exports = app;
+
+// Only export app for testing, otherwise start server if run directly
+if (require.main === module) {
+  // Already handled by client.connect().then(...)
+} else {
+  module.exports = app;
+}

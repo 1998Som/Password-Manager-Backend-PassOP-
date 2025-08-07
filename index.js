@@ -24,16 +24,16 @@ const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 app.use(cors());
-
-(async () => {
-  try {
-    await client.connect();
-    db = client.db(dbName);
-    console.log("✅ Connected to MongoDB");
-  } catch (err) {
+client.connect()
+  .then(() => {
+    console.log("✅ MongoDB connected");
+    app.listen(port, () => {
+      console.log(`✅ Server is running on port ${port}`);
+    });
+  })
+  .catch((err) => {
     console.error("❌ MongoDB connection failed:", err);
-  }
-})();
+  });
 //get a password
 app.get("/", async (req, res) => {
   const db = client.db(dbName);

@@ -59,25 +59,39 @@ const { ObjectId } = require("mongodb");
 app.delete("/", async (req, res) => {
   try {
     const { _id } = req.body;
+
+    // Check if _id is provided
     if (!_id) {
       return res.status(400).json({ success: false, message: "_id is required for deletion" });
     }
+
+    // Validate if _id is a valid ObjectId
+    if (!ObjectId.isValid(_id)) {
+      return res.status(400).json({ success: false, message: "Invalid _id format" });
+    }
+
     const db = client.db(dbName);
     const collection = db.collection("passwords");
+
+    // Convert _id to ObjectId and try deletion
     const result = await collection.deleteOne({ _id: new ObjectId(_id) });
+
     if (result.deletedCount === 0) {
       return res.status(404).json({ success: false, message: "Password not found" });
     }
-    res.send({
+
+    res.status(200).json({
       success: true,
       result,
       message: "Password deleted successfully",
     });
+
   } catch (error) {
-    console.error("Delete error:", error);
+    console.error("Delete error:", error.message); // log specific error message
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 // update a password
 app.put("/", async (req, res) => {
   try {

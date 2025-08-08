@@ -89,7 +89,7 @@ app.delete("/", async (req, res) => {
   }
 });
 
-// update a password
+
 // update a password
 app.put("/", async (req, res) => {
   try {

@@ -1,6 +1,5 @@
 const express = require("express");
 
-
 const dotenv = require("dotenv");
 const { MongoClient } = require("mongodb");
 
@@ -24,7 +23,8 @@ const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 app.use(cors());
-client.connect()
+client
+  .connect()
   .then(() => {
     console.log("✅ MongoDB connected");
     app.listen(port, () => {
@@ -60,66 +60,65 @@ app.delete("/", async (req, res) => {
   try {
     const { _id } = req.body;
 
-    // Check if _id is provided
-    if (!_id) {
-      return res.status(400).json({ success: false, message: "_id is required for deletion" });
-    }
-
-    // Validate if _id is a valid ObjectId
-    if (!ObjectId.isValid(_id)) {
-      return res.status(400).json({ success: false, message: "Invalid _id format" });
+    // Check if ID exists and is valid
+    if (!_id || !ObjectId.isValid(_id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing _id for deletion",
+      });
     }
 
     const db = client.db(dbName);
     const collection = db.collection("passwords");
 
-    // Convert _id to ObjectId and try deletion
     const result = await collection.deleteOne({ _id: new ObjectId(_id) });
 
     if (result.deletedCount === 0) {
-      return res.status(404).json({ success: false, message: "Password not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Password not found" });
     }
 
-    res.status(200).json({
+    res.json({
       success: true,
-      result,
       message: "Password deleted successfully",
     });
-
   } catch (error) {
-    console.error("Delete error:", error.message); // log specific error message
+    console.error("Delete error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
 // update a password
+// update a password
 app.put("/", async (req, res) => {
   try {
-    const { _id, site, username, password } = req.body;
-    if (!_id || !site || !username || !password) {
-      return res.status(400).json({ success: false, message: "Invalid data" });
+    const { _id, website, username, password } = req.body;
+
+    if (!_id || !ObjectId.isValid(_id)) {
+      return res.status(400).json({ success: false, message: "Invalid ID" });
     }
+
     const db = client.db(dbName);
     const collection = db.collection("passwords");
+
     const result = await collection.updateOne(
       { _id: new ObjectId(_id) },
-      { $set: { site, username, password } }
+      { $set: { website, username, password } }
     );
+
     if (result.matchedCount === 0) {
-      return res.status(404).json({ success: false, message: "Not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Password not found" });
     }
-    res.json({
-      success: true,
-      result,
-      message: "Password updated successfully",
-    });
-  } catch (error) {
-    console.error("Update error:", error);
+
+    res.json({ success: true, message: "Password updated successfully" });
+  } catch (err) {
+    console.error("Update error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
-
-
 
 // Only export app for testing, otherwise start server if run directly
 if (require.main === module) {

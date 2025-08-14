@@ -86,9 +86,8 @@ app.get("/", requireAuth, async (req, res) => {
     
     console.log(`Found ${findResult.length} passwords for user ${req.userId}`);
     
-    // Remove sensitive data before sending
-    const sanitizedResults = findResult.map(({ userId, ...rest }) => rest);
-    res.json(sanitizedResults);
+    // Keep userId in the response
+    res.json(findResult);
   } catch (error) {
     console.error("Get passwords error:", error);
     res.status(500).json({ 

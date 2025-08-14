@@ -15,17 +15,24 @@ const port = process.env.PORT || 3000;
 // Configure CORS with specific options
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = ['http://localhost:5173', 'https://password-manager-pass-op.vercel.app'];
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'https://password-manager-pass-op.vercel.app',
+      'https://password-manager-pass-op-zeta.vercel.app'
+    ];
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log('Blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'X-User-Id'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'X-User-Id', 'Authorization', 'user-id'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
   credentials: true,
+  maxAge: 86400,  // Preflight results can be cached for 24 hours
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 

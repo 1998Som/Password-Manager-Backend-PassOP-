@@ -147,11 +147,11 @@ app.delete("/", requireAuth, async (req, res) => {
   try {
     const { _id } = req.body;
 
-    // Validate the password ID
-    if (!_id || !ObjectId.isValid(_id)) {
+    // Validate that we have an ID
+    if (!_id) {
       return res.status(400).json({
         success: false,
-        message: "Invalid password ID"
+        message: "Password ID is required"
       });
     }
 
@@ -159,9 +159,14 @@ app.delete("/", requireAuth, async (req, res) => {
     const collection = db.collection("passwords");
 
     // First verify the password belongs to the user
-    const password = await collection.findOne({
-      _id: new ObjectId(_id)
-    });
+    const query = { userId: req.userId };
+    if (ObjectId.isValid(_id)) {
+      query._id = new ObjectId(_id);
+    } else {
+      query._id = _id;
+    }
+
+    const password = await collection.findOne(query);
 
     if (!password) {
       return res.status(404).json({
@@ -178,11 +183,8 @@ app.delete("/", requireAuth, async (req, res) => {
       });
     }
 
-    // Delete the password
-    const result = await collection.deleteOne({ 
-      _id: new ObjectId(_id),
-      userId: req.userId
-    });
+    // Delete the password using the same query
+    const result = await collection.deleteOne(query);
 
     if (result.deletedCount === 0) {
       return res.status(404).json({
